@@ -1,0 +1,1748 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEVEN DAYS: A School Life Simulator</title>
+    <!-- Tailwind CSS v3 CDN with Class Dark Mode Configuration -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        slate: {
+                            850: '#1e293b',
+                            950: '#020617',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.90);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .dark .glass-panel {
+            background: rgba(15, 23, 42, 0.90);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .scene-bg {
+            background-size: cover;
+            background-position: center;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col transition-colors duration-300">
+
+<!-- TOP HUD / HEADER SYSTEM -->
+<header id="hud-header" class="hidden sticky top-0 z-40 w-full glass-panel border-b border-slate-200 dark:border-slate-800 px-4 py-3 shadow-md">
+    <div class="max-w-4xl mx-auto flex items-center justify-between gap-2">
+        <!-- Day Badge -->
+        <div class="flex items-center gap-2">
+            <span id="hud-day-badge" class="px-3 py-1 rounded-full text-xs font-bold bg-indigo-600 text-white shadow-sm flex items-center gap-1.5">
+                <i class="fa-regular fa-calendar-check"></i> <span id="hud-day-text">Day 1</span>
+            </span>
+            <span id="hud-scene-title" class="text-xs text-slate-600 dark:text-slate-400 font-medium hidden sm:inline">Kesan Pertama</span>
+        </div>
+
+        <!-- Stats Bar -->
+        <div class="flex items-center gap-4 text-xs font-semibold">
+            <div class="flex items-center gap-1.5" title="Akademik">
+                <i class="fa-solid fa-graduation-cap text-sky-600 dark:text-sky-400 text-sm"></i>
+                <span class="text-slate-500 dark:text-slate-400 hidden sm:inline">Akad:</span>
+                <span id="stat-academic" class="text-sky-600 dark:text-sky-400 font-bold">0</span>
+            </div>
+            <div class="flex items-center gap-1.5" title="Popularitas">
+                <i class="fa-solid fa-fire text-pink-600 dark:text-pink-500 text-sm"></i>
+                <span class="text-slate-500 dark:text-slate-400 hidden sm:inline">Pop:</span>
+                <span id="stat-popularity" class="text-pink-600 dark:text-pink-500 font-bold">0</span>
+            </div>
+            <div class="flex items-center gap-1.5" title="Kepercayaan">
+                <i class="fa-solid fa-handshake-angle text-emerald-600 dark:text-emerald-400 text-sm"></i>
+                <span class="text-slate-500 dark:text-slate-400 hidden sm:inline">Percaya:</span>
+                <span id="stat-trust" class="text-emerald-600 dark:text-emerald-400 font-bold">0</span>
+            </div>
+        </div>
+
+        <!-- Menu Action Buttons -->
+        <div class="flex items-center gap-2">
+            <button onclick="window.gameEngine.toggleTheme()" class="p-2 rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs transition-colors" title="Ubah Tema Terang/Gelap">
+                <i id="theme-toggle-icon" class="fa-solid fa-moon"></i>
+            </button>
+            <button onclick="window.gameEngine.backToTimeline()" class="p-2 rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs transition-colors flex items-center gap-1">
+                <i class="fa-solid fa-timeline"></i>
+                <span class="hidden md:inline">Timeline</span>
+            </button>
+            <button onclick="window.gameEngine.resetGame()" class="p-2 rounded-lg bg-rose-100 dark:bg-rose-900/40 hover:bg-rose-200 dark:hover:bg-rose-800/60 text-rose-700 dark:text-rose-300 text-xs transition-colors" title="Reset Progres">
+                <i class="fa-solid fa-rotate-right"></i>
+            </button>
+        </div>
+    </div>
+</header>
+
+<!-- MAIN GAME CONTAINER -->
+<main class="flex-grow flex items-center justify-center p-3 sm:p-6 max-w-4xl mx-auto w-full">
+
+    <!-- SCREEN 1: TITLE / WELCOME SCREEN -->
+    <section id="screen-title" class="w-full flex flex-col items-center justify-center text-center py-10">
+        <div class="relative mb-6 w-full max-w-lg">
+            <div class="absolute -inset-1 rounded-3xl bg-gradient-to-r from-pink-600 via-indigo-600 to-sky-600 opacity-75 blur-lg animate-pulse"></div>
+            <div class="relative px-8 py-10 glass-panel rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col items-center">
+                <div class="w-full flex justify-end mb-2">
+                    <button onclick="window.gameEngine.toggleTheme()" class="p-2 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs transition-colors flex items-center gap-1.5 shadow-sm">
+                        <i id="title-theme-toggle-icon" class="fa-solid fa-moon"></i>
+                        <span class="text-xs font-semibold">Tema</span>
+                    </button>
+                </div>
+                <span class="px-3 py-1 rounded-full text-xs font-semibold tracking-wider uppercase bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 mb-3">
+                    Interactive Media Simulator
+                </span>
+                <h1 class="text-4xl sm:text-6xl font-black tracking-tight text-slate-900 dark:text-white mb-2">
+                    SEVEN DAYS
+                </h1>
+                <p class="text-lg sm:text-xl font-medium text-pink-600 dark:text-pink-400 tracking-wide mb-4">
+                    A School Life Simulator
+                </p>
+                <p class="text-sm text-slate-600 dark:text-slate-300 max-w-md mx-auto leading-relaxed mb-8">
+                    Jalani 7 hari pertama di SMA Garuda. Setiap pilihanmu menentukan reputasi akademik, popularitas sosial, dan tingkat kepercayaan teman-temanmu.
+                </p>
+
+                <div class="flex flex-col sm:flex-row gap-3 w-full max-w-xs">
+                    <button onclick="window.gameEngine.startCurrentDay()" class="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-indigo-600 to-pink-600 hover:from-indigo-700 hover:to-pink-700 text-white font-bold shadow-lg shadow-indigo-500/25 transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-play text-xs"></i>
+                        <span id="title-start-btn-text">Mulai Cerita</span>
+                    </button>
+                    <button onclick="window.gameEngine.showScreen('screen-timeline')" class="w-full py-3.5 px-6 rounded-2xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-semibold border border-slate-300 dark:border-slate-700 transition-all flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-list-check text-xs"></i>
+                        <span>Pilih Hari</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <p class="text-xs text-slate-500 dark:text-slate-400 font-mono">Build Version 1.6.0 • Localized Revision 2 & Dark Mode Fix</p>
+    </section>
+
+    <!-- SCREEN 2: TIMELINE HUB SCREEN -->
+    <section id="screen-timeline" class="hidden w-full flex flex-col gap-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-300 dark:border-slate-800">
+            <div>
+                <h2 class="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-route text-indigo-600 dark:text-indigo-400"></i> Timeline Navigasi 7 Hari
+                </h2>
+                <p class="text-xs text-slate-600 dark:text-slate-400">Pilih hari yang tersedia untuk memulai atau melanjutkan cerita.</p>
+            </div>
+            <button onclick="window.gameEngine.showScreen('screen-title')" class="self-start sm:self-auto px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 transition-colors">
+                <i class="fa-solid fa-arrow-left mr-1.5"></i> Kembali ke Menu Utama
+            </button>
+        </div>
+
+        <!-- Timeline Cards Grid -->
+        <div id="timeline-cards-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Generated dynamically by JS -->
+        </div>
+    </section>
+
+    <!-- SCREEN 3: GAMEPLAY / SCENE VIEW -->
+    <section id="screen-gameplay" class="hidden w-full flex flex-col gap-4">
+        <!-- Scene Image Container -->
+        <div class="relative w-full h-56 sm:h-72 rounded-2xl overflow-hidden border border-slate-300 dark:border-slate-800 shadow-xl bg-slate-950">
+            <div id="scene-image" class="absolute inset-0 scene-bg transition-opacity duration-500"></div>
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent"></div>
+            
+            <!-- Overlay Scene Indicator -->
+            <div class="absolute top-3 left-3 px-3 py-1 rounded-lg bg-slate-900/80 backdrop-blur border border-slate-700 text-xs font-bold text-indigo-300 flex items-center gap-1.5 shadow-md">
+                <i class="fa-solid fa-location-dot"></i>
+                <span id="scene-location-text">SMA Garuda — Ruang Kelas XI-2</span>
+            </div>
+        </div>
+
+        <!-- Dialogue & Narrative Panel -->
+        <div class="glass-panel p-5 sm:p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl flex flex-col gap-4">
+            <div class="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-indigo-500 animate-pulse"></span>
+                <h3 id="scene-title-text" class="text-base font-bold text-indigo-700 dark:text-indigo-300">Day Title</h3>
+            </div>
+
+            <!-- Scene Story Text -->
+            <div id="scene-narrative-text" class="text-sm sm:text-base text-slate-800 dark:text-slate-100 leading-relaxed font-normal min-h-[80px]">
+                ...
+            </div>
+
+            <!-- Dynamic Option Cards -->
+            <div id="scene-options-container" class="flex flex-col gap-3 pt-2">
+                <!-- Option buttons will be generated by JS -->
+            </div>
+        </div>
+    </section>
+
+    <!-- SCREEN 4: END OF DAY / SUMMARY SCREEN -->
+    <section id="screen-ending" class="hidden w-full flex flex-col items-center justify-center py-6">
+        <div class="w-full glass-panel p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col items-center text-center gap-6">
+            <div id="ending-icon-container" class="w-16 h-16 rounded-2xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-indigo-600 dark:text-indigo-400 text-2xl">
+                <i id="ending-icon" class="fa-solid fa-award"></i>
+            </div>
+
+            <div>
+                <span id="ending-badge-text" class="px-3 py-1 rounded-full text-xs font-bold bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30">
+                    RINGKASAN HARI
+                </span>
+                <h2 id="ending-title-text" class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white mt-2">
+                    Hasil Keputusanmu
+                </h2>
+                <p id="ending-desc-text" class="text-xs sm:text-sm text-slate-600 dark:text-slate-300 max-w-md mx-auto mt-2 leading-relaxed">
+                    Statistik dan konsekuensi akumulatif hingga hari ini.
+                </p>
+            </div>
+
+            <!-- Stats Summary Matrix -->
+            <div class="grid grid-cols-3 gap-3 sm:gap-4 w-full max-w-md">
+                <div class="p-3.5 rounded-2xl bg-white/70 dark:bg-slate-900/80 border border-sky-500/30 flex flex-col items-center shadow-sm">
+                    <span class="text-xs text-slate-500 dark:text-slate-400 mb-1">Akademik</span>
+                    <span id="end-stat-acad" class="text-lg font-bold text-sky-600 dark:text-sky-400">+0</span>
+                </div>
+                <div class="p-3.5 rounded-2xl bg-white/70 dark:bg-slate-900/80 border border-pink-500/30 flex flex-col items-center shadow-sm">
+                    <span class="text-xs text-slate-500 dark:text-slate-400 mb-1">Popularitas</span>
+                    <span id="end-stat-pop" class="text-lg font-bold text-pink-600 dark:text-pink-400">+0</span>
+                </div>
+                <div class="p-3.5 rounded-2xl bg-white/70 dark:bg-slate-900/80 border border-emerald-500/30 flex flex-col items-center shadow-sm">
+                    <span class="text-xs text-slate-500 dark:text-slate-400 mb-1">Kepercayaan</span>
+                    <span id="end-stat-trust" class="text-lg font-bold text-emerald-600 dark:text-emerald-400">+0</span>
+                </div>
+            </div>
+
+            <!-- Ending Extra Narrative Details (Day 7 Finale) -->
+            <div id="ending-extra-details" class="hidden w-full max-w-md p-4 rounded-2xl bg-white/70 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 text-xs sm:text-sm text-left leading-relaxed text-slate-700 dark:text-slate-200 shadow-sm">
+            </div>
+
+            <!-- Action Buttons -->
+            <div id="summary-actions" class="flex flex-col gap-3 w-full max-w-xs mt-2">
+                <!-- Dynamic action buttons added via JS -->
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<!-- EXP FEEDBACK MODAL DIALOG -->
+<div id="feedback-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
+    <div class="glass-panel w-full max-w-md p-6 rounded-3xl border border-indigo-500/30 shadow-2xl flex flex-col gap-4">
+        <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+            <span class="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
+                <i class="fa-solid fa-chart-line"></i> Konsekuensi Keputusan
+            </span>
+            <span id="feedback-scene-tag" class="text-xs text-slate-500 dark:text-slate-400">Hasil Pilihan</span>
+        </div>
+
+        <!-- EXP Changes Container -->
+        <div id="feedback-exp-list" class="flex flex-wrap gap-2 py-1">
+            <!-- Dynamically populated -->
+        </div>
+
+        <!-- Narrative Text -->
+        <p id="feedback-narrative" class="text-sm text-slate-800 dark:text-slate-200 leading-relaxed bg-white/70 dark:bg-slate-900/60 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+            Teks narasi konsekuensi...
+        </p>
+
+        <button onclick="window.gameEngine.closeFeedbackModal()" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30">
+            <span>Lanjutkan</span>
+            <i class="fa-solid fa-arrow-right text-xs"></i>
+        </button>
+    </div>
+</div>
+
+<!-- FULL DETAILED STATS MODAL (DAY 7 FINALE SUMMARY) -->
+<div id="full-stats-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fade-in">
+    <div class="glass-panel w-full max-w-xl p-6 sm:p-7 rounded-3xl border border-indigo-500/30 shadow-2xl flex flex-col gap-5 max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+            <h3 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <i class="fa-solid fa-clipboard-check text-indigo-500"></i> Laporan Rekapitulasi 7 Hari
+            </h3>
+            <button onclick="window.gameEngine.closeFullStatsModal()" class="p-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-700 text-xs">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <div id="full-stats-content" class="flex flex-col gap-4 text-xs sm:text-sm text-slate-800 dark:text-slate-200">
+            <!-- Dynamically rendered detailed content -->
+        </div>
+
+        <button onclick="window.gameEngine.closeFullStatsModal()" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs sm:text-sm transition-all shadow-lg">
+            Tutup Rekapitulasi
+        </button>
+    </div>
+</div>
+
+<!-- CORE GAME ENGINE JS v1.6 (Localized & Progression Guard) -->
+<script>
+    /**
+     * SEVEN DAYS: A School Life Simulator Engine (v1.6)
+     * Fully localized in Bahasa Indonesia for Days 1 - 7 with Revision 1 progression lock & theme fix
+     */
+
+    const GAME_CONFIG = {
+        STORAGE_KEY: 'sevendays_game_save_v1.6_loc',
+        TOTAL_DAYS: 7,
+        DAYS_DATA: [
+            { day: 1, title: 'Day 1 — The First Impression', icon: 'fa-door-open', unlocked: true },
+            { day: 2, title: 'Day 2 — Finding Your People', icon: 'fa-users', unlocked: true },
+            { day: 3, title: 'Day 3 — The Group Assignment', icon: 'fa-people-group', unlocked: true },
+            { day: 4, title: 'Day 4 — A Little Gossip', icon: 'fa-comments', unlocked: true },
+            { day: 5, title: 'Day 5 — The Test', icon: 'fa-pen-to-square', unlocked: true },
+            { day: 6, title: 'Day 6 — The Invitation', icon: 'fa-envelope-open-text', unlocked: true },
+            { day: 7, title: 'Day 7 — Where Do You Belong?', icon: 'fa-graduation-cap', unlocked: true }
+        ]
+    };
+
+    const IMAGE_ASSETS = {
+        classroom_morning: 'https://images.unsplash.com/photo-1580582932707-520aed937b7b?q=80&w=1000&auto=format&fit=crop',
+        classroom_group: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1000&auto=format&fit=crop',
+        canteen: 'https://images.unsplash.com/photo-1567521464027-f127ff144326?q=80&w=1000&auto=format&fit=crop',
+        corridor_afternoon: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?q=80&w=1000&auto=format&fit=crop',
+        library: 'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?q=80&w=1000&auto=format&fit=crop',
+        whispering: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?q=80&w=1000&auto=format&fit=crop',
+        study_night: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?q=80&w=1000&auto=format&fit=crop',
+        exam_room: 'https://images.unsplash.com/photo-1606326608606-aa0b62935f2b?q=80&w=1000&auto=format&fit=crop',
+        exam_tension: 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?q=80&w=1000&auto=format&fit=crop',
+        after_exam: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=1000&auto=format&fit=crop',
+        cafe_hangout: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=1000&auto=format&fit=crop',
+        home_relax: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?q=80&w=1000&auto=format&fit=crop',
+        online_chat: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1000&auto=format&fit=crop',
+        exam_results: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?q=80&w=1000&auto=format&fit=crop',
+        sunday_window: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?q=80&w=1000&auto=format&fit=crop',
+        evening_sunset: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1000&auto=format&fit=crop'
+    };
+
+    const DAY_SCENES = {
+        1: [
+            {
+                id: 'd1_scene1',
+                location: 'SMA Garuda — Koridor & Kelas XI-2',
+                title: 'Day 1: Where Do You Sit?',
+                image: IMAGE_ASSETS.classroom_morning,
+                narrative: `Senin, pukul 06.45. Hari ini adalah hari pertamamu di SMA Garuda. Setelah pindah dari kota lain karena pekerjaan orang tuamu, kamu harus memulai semuanya dari awal.<br><br>Kamu berdiri di depan pintu kelas XI-2. Dari dalam, terdengar suara tawa dan percakapan siswa. Wali kelas belum datang, dan kamu harus menentukan tempat duduk pertamamu.`,
+                options: [
+                    {
+                        text: 'Bergabung dengan kelompok yang ramai',
+                        exp: { academic: 0, popularity: 8, trust: 0 },
+                        flag: 'joined_popular_group',
+                        feedback: 'Beberapa siswa mulai mengenali wajahmu. Meskipun belum benar-benar akrab, kamu sudah membuka kesempatan untuk terlibat dalam percakapan kelompok tersebut.'
+                    },
+                    {
+                        text: 'Duduk di dekat siswa yang sendirian',
+                        exp: { academic: 0, popularity: 0, trust: 8 },
+                        flag: 'befriended_quiet_student',
+                        feedback: 'Percakapan singkat itu menjadi awal dari sebuah kemungkinan pertemanan. Kamu belum mengenalnya dengan baik, tetapi setidaknya kalian sudah saling menyapa.'
+                    },
+                    {
+                        text: 'Duduk di bangku kosong dan belajar',
+                        exp: { academic: 8, popularity: 0, trust: 0 },
+                        flag: 'studied_during_break',
+                        feedback: 'Kamu merasa sedikit lebih siap menghadapi pelajaran pertama. Namun, sementara teman-teman lain mulai membangun percakapan, kamu belum banyak terlibat.'
+                    }
+                ]
+            },
+            {
+                id: 'd1_scene2',
+                location: 'SMA Garuda — Depan Kelas XI-2',
+                title: 'Day 1: Introduce Yourself',
+                image: IMAGE_ASSETS.classroom_morning,
+                narrative: `Wali kelas masuk dan meminta semua siswa memperkenalkan diri secara singkat. Ketika tiba giliranmu, perhatian seluruh kelas tertuju kepadamu.<br><br>"Silakan, perkenalkan dirimu. Sebutkan nama, sekolah asal, dan ceritakan sedikit tentang dirimu," kata guru tersenyum.`,
+                options: [
+                    {
+                        text: 'Tampil percaya diri dan menceritakan prestasi',
+                        exp: { academic: 5, popularity: 5, trust: 0 },
+                        flag: 'intro_ambitious',
+                        feedback: 'Beberapa siswa terlihat tertarik dengan prestasimu. Ada yang mengagumimu, tetapi ada juga yang mulai menganggapmu sebagai seseorang yang sangat kompetitif.'
+                    },
+                    {
+                        text: 'Memperkenalkan diri dengan santai',
+                        exp: { academic: 0, popularity: 5, trust: 5 },
+                        flag: 'intro_casual',
+                        feedback: 'Beberapa siswa mulai menyebutkan hobi favorit mereka. Suasana menjadi lebih santai, dan kamu mulai menemukan kesempatan untuk mengobrol.'
+                    },
+                    {
+                        text: 'Memperkenalkan diri secara singkat dan sopan',
+                        exp: { academic: 2, popularity: 1, trust: 2 },
+                        flag: 'intro_polite',
+                        feedback: 'Perkenalanmu berlangsung singkat dan sopan. Kamu tidak langsung menarik perhatian besar, tetapi memberikan kesan yang tenang.'
+                    }
+                ],
+                getDynamicNarrative: (flags) => {
+                    let text = `Wali kelas masuk dan meminta semua siswa memperkenalkan diri. Giliranmu tiba.<br><br>`;
+                    if (flags.joined_popular_group) {
+                        text += `Beberapa anggota kelompok populer yang kamu dekati tadi pagi mengangguk memberimu semangat saat kamu berjalan ke depan.`;
+                    } else if (flags.befriended_quiet_student) {
+                        text += `Teman di sebelah jendela memberikan senyuman tipis yang memberimu rasa percaya diri.`;
+                    } else {
+                        text += `Kamu menyusun catatanmu dan melangkah dengan tenang ke depan kelas.`;
+                    }
+                    return text;
+                }
+            },
+            {
+                id: 'd1_scene3',
+                location: 'SMA Garuda — Kantin Sekolah',
+                title: 'Day 1: The Lunch Invitation',
+                image: IMAGE_ASSETS.canteen,
+                narrative: `Saat jam istirahat tiba, kamu menyadari bahwa setiap kelompok memiliki kebiasaannya sendiri. Beberapa siswa mengajakmu makan bersama, sementara pilihan lain juga menantimu.`,
+                options: [
+                    {
+                        text: 'Menerima ajakan kelompok populer',
+                        exp: { academic: 0, popularity: 8, trust: 2 },
+                        flag: 'lunch_popular',
+                        feedback: 'Kamu mulai memasuki lingkaran pertemanan yang lebih luas dan memahami kebiasaan sosial mereka.'
+                    },
+                    {
+                        text: 'Makan bersama siswa yang kamu sapa sebelumnya',
+                        exp: { academic: 0, popularity: 2, trust: 8 },
+                        flag: 'lunch_quiet',
+                        feedback: 'Kalian mulai membangun hubungan yang lebih personal. Teman ini berpotensi menjadi sosok yang diandalkan.'
+                    },
+                    {
+                        text: 'Tetap di kelas untuk belajar',
+                        exp: { academic: 8, popularity: 0, trust: 0 },
+                        flag: 'lunch_study',
+                        feedback: 'Kamu memperkuat persiapan akademikmu, tetapi melewatkan kesempatan membangun hubungan sosial saat istirahat.'
+                    }
+                ]
+            }
+        ],
+        2: [
+            {
+                id: 'd2_scene1',
+                location: 'SMA Garuda — Kelas XI-2 (Selasa Pagi)',
+                title: 'Day 2: Finding Your People',
+                image: IMAGE_ASSETS.classroom_morning,
+                narrative: `Selasa, 07.00 WIB. Beberapa wajah mulai terasa familier. Sekelompok siswa membicarakan rencana sepulang sekolah, sementara yang lain berdiskusi tentang pelajaran.`,
+                options: [
+                    {
+                        text: 'Bergabung dengan percakapan kelompok',
+                        exp: { academic: 0, popularity: 6, trust: 2 },
+                        flag: 'joined_morning_conversation',
+                        feedback: 'Kamu mulai berinteraksi dengan lebih banyak siswa. Percakapan berjalan aktif.'
+                    },
+                    {
+                        text: 'Menyapa seseorang secara empat mata',
+                        exp: { academic: 0, popularity: 2, trust: 7 },
+                        flag: 'initiated_personal_conversation',
+                        feedback: 'Kamu berkesempatan membangun hubungan personal yang lebih mendalam.'
+                    },
+                    {
+                        text: 'Fokus mempersiapkan pelajaran di meja',
+                        exp: { academic: 7, popularity: 0, trust: 1 },
+                        flag: 'focused_on_schoolwork_day2',
+                        feedback: 'Kamu merasa lebih siap menghadapi pelajaran hari ini.'
+                    }
+                ],
+                getDynamicNarrative: (flags) => {
+                    if (flags.joined_popular_group) {
+                        return `Selasa pagi. Beberapa anggota kelompok yang kamu dekati kemarin melambaikan tangan menyapamu. Kamu melihat mereka sedang asyik mengobrol di depan kelas.`;
+                    } else if (flags.befriended_quiet_student) {
+                        return `Selasa pagi. Teman yang kemarin kamu sapa menganggukkan kepala menyapamu saat kamu meletakkan tas.`;
+                    }
+                    return `Selasa, 07.00 WIB. Suasana kelas XI-2 sudah ramai. Kamu meletakkan tas dan mengamati kesempatan berinteraksi hari ini.`;
+                }
+            },
+            {
+                id: 'd2_scene2',
+                location: 'SMA Garuda — Ruang Kelas / Ponsel',
+                title: 'Day 2: Group Chat',
+                image: IMAGE_ASSETS.classroom_group,
+                narrative: `Bel istirahat berbunyi. Notifikasi grup percakapan kelas XI-2 mulai dibanjiri pesan tentang tugas, meme, dan rencana kegiatan sekolah.`,
+                options: [
+                    {
+                        text: 'Aktif membalas pesan dan meramaikan grup',
+                        exp: { academic: 0, popularity: 6, trust: 2 },
+                        flag: 'active_in_group_chat',
+                        feedback: 'Kamu menjadi lebih terlihat dalam percakapan digital kelas.'
+                    },
+                    {
+                        text: 'Menanggapi pesan seseorang secara pribadi',
+                        exp: { academic: 0, popularity: 2, trust: 7 },
+                        flag: 'built_personal_connection_day2',
+                        feedback: 'Obrolan privat memberi kesempatan mengenal karakter teman sekelas secara nyata.'
+                    },
+                    {
+                        text: 'Mengamati isi percakapan tanpa membalas',
+                        exp: { academic: 1, popularity: 0, trust: 3 },
+                        flag: 'observed_group_chat',
+                        feedback: 'Kamu memahami dinamika komunikasi kelas tanpa terlalu menonjolkan diri.'
+                    }
+                ]
+            },
+            {
+                id: 'd2_scene3',
+                location: 'SMA Garuda — Gerbang / Koridor Sekolah',
+                title: 'Day 2: An Unexpected Invitation',
+                image: IMAGE_ASSETS.corridor_afternoon,
+                narrative: `Pelajaran terakhir selesai. Seorang teman menghampirimu dan mengajakmu melakukan sesuatu sepulang sekolah.`,
+                options: [
+                    {
+                        text: 'Menerima ajakan kegiatan bersama',
+                        exp: { academic: 0, popularity: 5, trust: 5 },
+                        flag: 'accepted_day2_invitation',
+                        feedback: 'Kamu mendapatkan pengalaman sosial berharga di luar jam pelajaran.'
+                    },
+                    {
+                        text: 'Mengusulkan rencana yang lebih sederhana',
+                        exp: { academic: 0, popularity: 2, trust: 7 },
+                        flag: 'suggested_smaller_plan',
+                        feedback: 'Interaksi terasa lebih nyaman dan fokus dalam suasana yang tenang.'
+                    },
+                    {
+                        text: 'Menolak ajakan dengan sopan',
+                        exp: { academic: 2, popularity: 0, trust: 1 },
+                        flag: 'declined_day2_invitation',
+                        feedback: 'Kamu memilih menggunakan waktu pribadi, namun tetap menjaga hubungan baik.'
+                    }
+                ]
+            }
+        ],
+        3: [
+            {
+                id: 'd3_scene1',
+                location: 'SMA Garuda — Ruang Kelas XI-2',
+                title: 'Day 3: The Group Assignment',
+                image: IMAGE_ASSETS.classroom_group,
+                narrative: `Rabu pagi, 07.15 WIB. Guru mengumumkan tugas proyek kelompok beranggota empat orang. Kamu duduk bersama kelompokmu untuk menentukan bagaimana kalian akan bekerja bersama.`,
+                options: [
+                    {
+                        text: 'Mengambil inisiatif mengusulkan ide dan struktur',
+                        exp: { academic: 5, popularity: 3, trust: 2 },
+                        flag: 'took_group_initiative',
+                        feedback: 'Inisiatifmu membantu kelompok mulai bergerak, meskipun memberi ruang bagi orang lain tetap penting.'
+                    },
+                    {
+                        text: 'Mendengarkan pendapat semua anggota terlebih dahulu',
+                        exp: { academic: 2, popularity: 2, trust: 6 },
+                        flag: 'listened_before_deciding',
+                        feedback: 'Pendekatan inklusif membuat setiap anggota merasa didengarkan sebelum mengambil keputusan.'
+                    },
+                    {
+                        text: 'Menunggu sampai ada anggota lain yang memimpin',
+                        exp: { academic: 1, popularity: 0, trust: 1 },
+                        flag: 'waited_for_group_lead',
+                        feedback: 'Menunggu memberi kesempatan melihat dinamika orang lain, meski pengerjaan proyek berjalan perlahan.'
+                    }
+                ]
+            },
+            {
+                id: 'd3_scene2',
+                location: 'SMA Garuda — Diskusi Kelompok',
+                title: 'Day 3: The Problematic Teammate',
+                image: IMAGE_ASSETS.classroom_group,
+                narrative: `Salah satu anggota kelompok terlihat pasif dan sibuk dengan ponselnya saat pembagian tugas berlangsung.`,
+                options: [
+                    {
+                        text: 'Menanyakan secara langsung dan tegas mengenai kontribusinya',
+                        exp: { academic: 2, popularity: 1, trust: 3 },
+                        flag: 'confronted_teammate',
+                        feedback: 'Pertanyaan tegas memaksa kejelasan tanggung jawab, walau situasi sempat terasa canggung.'
+                    },
+                    {
+                        text: 'Menanyakan secara pribadi kendala yang dihadapinya',
+                        exp: { academic: 2, popularity: 2, trust: 6 },
+                        flag: 'offered_support_to_teammate',
+                        feedback: 'Pendekatan empati membuka fakta bahwa ia kesulitan memahami materi.'
+                    },
+                    {
+                        text: 'Fokus menyelesaikan bagian tugasmu sendiri',
+                        exp: { academic: 5, popularity: 0, trust: 0 },
+                        flag: 'focused_on_own_work',
+                        feedback: 'Tugas pribadi terjamin, tetapi koordinasi tim belum sepenuhnya tuntas.'
+                    }
+                ]
+            },
+            {
+                id: 'd3_scene3',
+                location: 'SMA Garuda — Pembagian Tugas',
+                title: 'Day 3: Dividing the Work',
+                image: IMAGE_ASSETS.classroom_morning,
+                narrative: `Kelompok harus membagi peran: riset, analisis, penuangan materi, dan presentasi.`,
+                options: [
+                    {
+                        text: 'Memilih peran yang paling kamu kuasai',
+                        exp: { academic: 6, popularity: 1, trust: 3 },
+                        flag: 'chose_familiar_role',
+                        feedback: 'Hasil pengerjaan terjamin maksimal di bidang keahlianmu.'
+                    },
+                    {
+                        text: 'Mengambil peran baru yang menantang',
+                        exp: { academic: 4, popularity: 1, trust: 3 },
+                        flag: 'chose_challenging_role',
+                        feedback: 'Kamu keluar dari zona nyaman dan memperoleh wawasan baru.'
+                    },
+                    {
+                        text: 'Mengambil peran penutup yang tidak diminati orang lain',
+                        exp: { academic: 3, popularity: 1, trust: 5 },
+                        flag: 'took_unpopular_role',
+                        feedback: 'Kerelaanmu mengambil tugas ini sangat dihargai oleh tim.'
+                    }
+                ]
+            }
+        ],
+        4: [
+            {
+                id: 'd4_scene1',
+                location: 'SMA Garuda — Kelas XI-2 (Kamis Pagi)',
+                title: 'Day 4: A Little Gossip',
+                image: IMAGE_ASSETS.whispering,
+                narrative: `Kamis pagi, 07.05 WIB. Beberapa siswa berbisik-bisik mengenai kejadian kerja kelompok kemarin. Ada potongan cerita yang terkelupas dan tersebar di kelas.`,
+                options: [
+                    {
+                        text: 'Mendengarkan percakapan dari kejauhan',
+                        exp: { academic: 0, popularity: 2, trust: 1 },
+                        flag: 'listened_to_rumor',
+                        feedback: 'Kamu memperoleh gambaran umum cerita tanpa langsung terlibat.'
+                    },
+                    {
+                        text: 'Bertanya langsung mencari klarifikasi konteks',
+                        exp: { academic: 0, popularity: 1, trust: 4 },
+                        flag: 'asked_for_rumor_context',
+                        feedback: 'Langkah klarifikasi membuka fakta bahwa kabar yang beredar belum tentu akurat.'
+                    },
+                    {
+                        text: 'Memilih tidak ikut campur dan fokus pada urusan sendiri',
+                        exp: { academic: 0, popularity: 0, trust: 2 },
+                        flag: 'stayed_out_of_rumor',
+                        feedback: 'Kamu menjaga jarak dari isu yang belum terverifikasi.'
+                    }
+                ],
+                getDynamicNarrative: (flags) => {
+                    let text = `Kamis pagi. Suasana kelas penuh dengan bisik-bisik. `;
+                    if (flags.took_group_initiative) {
+                        text += `Beberapa rumor menyebut ketegasanmu kemarin dianggap terlalu mendominasi.`;
+                    } else if (flags.offered_support_to_teammate) {
+                        text += `Ada desas-desus yang salah mengartikan bantuanmu pada teman kemarin.`;
+                    } else if (flags.focused_on_own_work) {
+                        text += `Cerita beredar seolah kamu hanya mementingkan diri sendiri saat tugas kelompok.`;
+                    } else {
+                        text += `Beberapa siswa sedang membicarakan dinamika kerja kelompok yang terjadi kemarin.`;
+                    }
+                    return text;
+                }
+            },
+            {
+                id: 'd4_scene2',
+                location: 'SMA Garuda — Istirahat Kelas',
+                title: 'Day 4: Someone Wants Your Opinion',
+                image: IMAGE_ASSETS.classroom_group,
+                narrative: `Saat jam istirahat, seorang teman mendekatimu dan menanyakan pandanganmu mengenai rumor yang sedang hangat dibicarakan.`,
+                options: [
+                    {
+                        text: 'Menyetujui tanggapan umum yang beredar',
+                        exp: { academic: 0, popularity: 5, trust: -2 },
+                        flag: 'agreed_with_rumor',
+                        feedback: 'Tanggapanmu membuat obrolan terasa akrab, tetapi berisiko mengorbankan objektivitas.'
+                    },
+                    {
+                        text: 'Memberikan jawaban yang hati-hati dan penuh pertimbangan',
+                        exp: { academic: 1, popularity: 1, trust: 5 },
+                        flag: 'responded_cautiously_to_rumor',
+                        feedback: 'Sikap berhati-hatimu menunjukkan kedewasaan dan menjaga kepercayaan.'
+                    },
+                    {
+                        text: 'Mengalihkan pembicaraan ke topik lain',
+                        exp: { academic: 0, popularity: 1, trust: 2 },
+                        flag: 'changed_rumor_subject',
+                        feedback: 'Kamu berhasil menghindar dari drama tanpa menimbulkan pertikaian.'
+                    }
+                ]
+            },
+            {
+                id: 'd4_scene3',
+                location: 'SMA Garuda — Akhir Pelajaran',
+                title: 'Day 4: The Rumor Gets Personal',
+                image: IMAGE_ASSETS.corridor_afternoon,
+                narrative: `Menjelang bel pulang, kamu mendapati bahwa versi cerita tentang dirimu dalam tugas kelompok telah sampai ke telingamu. Kian jelas bahwa reputasi sosial dipengaruhi oleh sudut pandang orang lain.`,
+                options: [
+                    {
+                        text: 'Menemui orang yang bersangkutan dan klarifikasi secara langsung',
+                        exp: { academic: 0, popularity: 2, trust: 5 },
+                        flag: 'addressed_rumor_directly',
+                        feedback: 'Klarifikasi jujur membantu meluruskan kesalahpahaman utama.'
+                    },
+                    {
+                        text: 'Berbicara dengan teman yang dipercaya untuk minta saran',
+                        exp: { academic: 0, popularity: 1, trust: 6 },
+                        flag: 'sought_trusted_perspective',
+                        feedback: 'Mendapat pandangan luar membuatmu menyikapi situasi dengan lebih tenang.'
+                    },
+                    {
+                        text: 'Biarkan tindakan nyata yang membuktikan reputasimu',
+                        exp: { academic: 2, popularity: 0, trust: 1 },
+                        flag: 'chose_not_to_address_rumor',
+                        feedback: 'Fokus pada hasil kerja nyata secara konsisten membentuk karaktermu.'
+                    }
+                ]
+            }
+        ],
+        5: [
+            {
+                id: 'd5_scene1',
+                location: 'Kamar / Sesi Belajar — Kamis Malam',
+                title: 'Day 5: The Test',
+                image: IMAGE_ASSETS.study_night,
+                narrative: `Malam sebelumnya, kamu sudah tahu bahwa ujian akan berlangsung pada hari Jumat.<br><br>Kamu memiliki waktu untuk mempersiapkan diri, tetapi tidak mungkin melakukan semuanya sekaligus. Kamu harus memutuskan bagaimana menggunakan sisa waktu sebelum ujian.`,
+                options: [
+                    {
+                        text: 'Belajar hingga larut malam',
+                        exp: { academic: 6, popularity: 0, trust: 0 },
+                        flag: 'studied_intensively_before_test',
+                        feedback: 'Kamu membuka kembali catatan, membaca materi yang belum dikuasai, dan mencoba mengerjakan beberapa soal latihan. Semakin lama kamu belajar, semakin banyak hal yang mulai kamu pahami. Namun, waktu berjalan tanpa terasa. Ketika akhirnya kamu menutup buku, kamu menyadari bahwa kamu telah menghabiskan lebih banyak waktu daripada yang direncanakan.'
+                    },
+                    {
+                        text: 'Belajar bersama teman-teman',
+                        exp: { academic: 4, popularity: 2, trust: 4 },
+                        flag: 'studied_with_classmates',
+                        feedback: 'Kalian mulai membahas materi yang diperkirakan penting untuk ujian. Salah satu teman menjelaskan bagian yang belum kamu pahami, sementara kamu membantu menjawab pertanyaan lain. Ketika sesi belajar berakhir, kamu mendapatkan beberapa pemahaman baru dan kesempatan menghabiskan waktu bersama teman-teman.'
+                    },
+                    {
+                        text: 'Beristirahat cukup',
+                        exp: { academic: 2, popularity: 0, trust: 0 },
+                        flag: 'rested_before_test',
+                        feedback: 'Kamu menutup buku dan mempersiapkan diri untuk beristirahat. Masih ada beberapa bagian materi yang belum kamu pelajari secara mendalam, tetapi kamu memutuskan bahwa memaksakan diri malam ini belum tentu menjadi pilihan terbaik. Kamu berharap istirahat yang cukup akan membantumu berkonsentrasi besok.'
+                    }
+                ]
+            },
+            {
+                id: 'd5_scene2',
+                location: 'SMA Garuda — Ruang Ujian (Jumat Pagi)',
+                title: 'Day 5: Soal Sulit',
+                image: IMAGE_ASSETS.exam_room,
+                narrative: `Jumat pagi, 08.00 WIB. Ruang kelas tampak hening. Lembar soal dan jawaban dibagikan.<br><br>Di pertengahan ujian, kamu menemukan satu soal dengan tingkat kesulitan tinggi yang memerlukan analisis mendalam. Waktu ujian terus berjalan di jam dinding kelas.`,
+                getDynamicNarrative: (flags) => {
+                    let text = `Jumat pagi, 08.00 WIB. Ruang kelas tenang dan serius. Lembar soal telah dibagikan.<br><br>`;
+                    if (flags.studied_intensively_before_test) {
+                        text += `Matamu yang sedikit lelah membaca soal nomor 15. Materi ini sempat kamu baca semalam, tetapi rumusnya cukup rumit.`;
+                    } else if (flags.studied_with_classmates) {
+                        text += `Kamu teringat diskusi kecil dengan teman-temanmu semalam saat membaca soal tantangan ini.`;
+                    } else {
+                        text += `Kepalamu terasa segar setelah tidur cukup, tetapi soal nomor 15 ini memang membutuhkan logika yang ekstra ketat.`;
+                    }
+                    text += `<br><br>Bagaimana kamu menghadapi soal sulit tersebut?`;
+                    return text;
+                },
+                options: [
+                    {
+                        text: 'Tetap tekun mencoba memecahkan soal',
+                        exp: { academic: 5, popularity: 0, trust: 1 },
+                        flag: 'persisted_on_difficult_question',
+                        feedback: 'Kamu mencoret-coret kertas buram dengan teliti. Usaha pantang menyerahmu membuahkan alur logika jawaban yang menurutmu paling masuk akal.'
+                    },
+                    {
+                        text: 'Lewati dan kerjakan soal lain terlebih dahulu',
+                        exp: { academic: 4, popularity: 0, trust: 0 },
+                        flag: 'skipped_question_temporarily',
+                        feedback: 'Kamu mengamankan poin dari soal-soal lain yang lebih cepat dikerjakan terlebih dahulu sebelum kembali meneliti soal sulit ini.'
+                    },
+                    {
+                        text: 'Mengandalkan intuisi dan insting pertama',
+                        exp: { academic: 2, popularity: 0, trust: 0 },
+                        flag: 'trusted_exam_instinct',
+                        feedback: 'Kamu mempercayai firasat awal jawabanmu tanpa menghabiskan terlalu banyak waktu untuk meragu.'
+                    }
+                ]
+            },
+            {
+                id: 'd5_scene3',
+                location: 'SMA Garuda — Ruang Ujian (10 Menit Terakhir)',
+                title: 'Day 5: Tekanan Ujian',
+                image: IMAGE_ASSETS.exam_tension,
+                narrative: `10 menit sebelum bel berakhir. Ruang kelas semakin tegang. Beberapa teman di sekitarmu mulai melirik kanan-kiri atau saling memberikan kode isyarat pelan.`,
+                options: [
+                    {
+                        text: 'Tetap percaya diri dengan jawaban murni sendiri',
+                        exp: { academic: 3, popularity: 0, trust: 5 },
+                        flag: 'relied_on_own_answers',
+                        feedback: 'Kamu fokus pada lembar jawabanmu sendiri hingga bel berbunyi. Rasa puas muncul karena tahu hasil ini adalah murni usahamu.'
+                    },
+                    {
+                        text: 'Sempat terpikir mengintip atau mengonfirmasi isyarat',
+                        exp: { academic: 1, popularity: 2, trust: -2 },
+                        flag: 'considered_cheating',
+                        feedback: 'Keraguan sempat melintas, tetapi kamu menyadari risiko integritas dan reputasimu jauh lebih besar.'
+                    },
+                    {
+                        text: 'Berhenti sejenak, tarik napas, lalu periksa kembali',
+                        exp: { academic: 4, popularity: 0, trust: 2 },
+                        flag: 'paused_and_refocused',
+                        feedback: 'Ketenangan hatimu membantu menemukan dua kesalahan kecil akibat ketidaktelitian saat mengisi nama dan nomor soal.'
+                    }
+                ]
+            }
+        ],
+        6: [
+            {
+                id: 'd6_scene1',
+                location: 'Kamar Tidur Alex — Sabtu Pagi (09.00 WIB)',
+                title: 'Day 6: The Invitation',
+                image: IMAGE_ASSETS.home_relax,
+                narrative: `Sabtu, 09.00 WIB. Ini adalah hari pertama kamu tidak perlu melangkah keluar rumah mengenakan seragam sekolah setelah melewati lima hari yang padat di SMA Garuda.<br><br>Sinar matahari pagi menembus jendela kamarmu. Kamu mengambil ponsel di meja samping tempat tidur. Layar ponselmu menyala menampilkan beberapa notifikasi pesan yang masuk...`,
+                getDynamicNarrative: (flags, engine) => {
+                    let text = `Sabtu, 09.00 WIB. Ini adalah pagi pertama kamu bisa menghirup napas lega tanpa harus terburu-buru mengenakan seragam SMA Garuda.<br><br>Kamu mengambil ponselmu di meja dan melihat notifikasi yang masuk:<br><br>`;
+                    
+                    if (flags.joined_popular_group || flags.lunch_popular || flags.accepted_day2_invitation) {
+                        text += `📱 <b>Pesan Grup Sosial:</b> <i>"Hei Alex! Kita mau kumpul di kafe baru dekat alun-alun siang ini. Kamu ikut berkumpul kan?"</i><br>`;
+                    } else if (flags.befriended_quiet_student || flags.initiated_personal_conversation || flags.lunch_quiet) {
+                        text += `📱 <b>Pesan Pribadi:</b> <i>"Pagi Alex! Mau cari tempat santai buat ngobrol atau membaca sebentar hari ini?"</i><br>`;
+                    } else {
+                        text += `📱 <b>Pesan Kelas XI-2:</b> Beberapa ucapan selamat akhir pekan menghiasi grup utama kelas.<br>`;
+                    }
+
+                    text += `📱 <b>Pesan Kelompok Tugas Proyek:</b> <i>"Jangan lupa draf laporan kelompok Hari ke-3 kita belum final ya, teman-teman..."</i><br><br>`;
+                    text += `Kamu berdiri di persimpangan jalan hari Sabtu ini. Bagaimana kamu memutuskan untuk menghabiskan harimu?`;
+                    return text;
+                },
+                options: [
+                    {
+                        text: 'Menyelesaikan Tugas Kelompok',
+                        exp: { academic: 6, popularity: 0, trust: 5 },
+                        flag: 'prioritized_group_assignment',
+                        feedback: 'Kamu membuka laptop dan langsung menghubungi anggota kelompok. Kamu menunjukkan sikap penuh tanggung jawab untuk menyelesaikan proyek tepat waktu.'
+                    },
+                    {
+                        text: 'Menerima Ajakan Berkumpul',
+                        exp: { academic: -4, popularity: 5, trust: 2 },
+                        flag: 'chose_hangout_over_project',
+                        feedback: 'Kamu membalas pesan teman-temanmu dan bersiap untuk pergi keluar. Ini adalah kesempatan bagus untuk mempererat pertemanan di luar lingkungan sekolah.'
+                    },
+                    {
+                        text: 'Menikmati Waktu untuk Diri Sendiri',
+                        exp: { academic: 1, popularity: 0, trust: 0 },
+                        flag: 'chose_personal_time',
+                        feedback: 'Kamu membalas pesan dengan sopan dan memutuskan untuk mengisi ulang energimu di rumah dengan bersantai, membaca, atau menekuni hobimu.'
+                    }
+                ]
+            },
+            {
+                id: 'd6_scene2',
+                location: 'Kamar / Kafe / Ruang Belajar (Sabtu Siang)',
+                title: 'Day 6: Tugas Kelompok',
+                image: IMAGE_ASSETS.online_chat,
+                narrative: `Siang hari tiba. Topik mengenai pengerjaan laporan tugas kelompok kembali mengemuka di grup koordinasi. Apapun keputusanmu tadi pagi, ada sisa bagian proyek yang perlu kepastian kontribusi dari dirimu.`,
+                getDynamicNarrative: (flags) => {
+                    let text = `Siang hari tiba. Ponselmu kembali berdering menampilkan pembaruan tugas kelompok.<br><br>`;
+                    if (flags.prioritized_group_assignment) {
+                        text += `Setelah fokus beberapa jam, draf pertamamu sudah terbentuk. Anggota kelompok mengapresiasi kerapihan kerjamu. Namun masih ada penyelesaian draf bagian akhir.`;
+                    } else if (flags.chose_hangout_over_project) {
+                        text += `Di tengah suasana berkumpul yang seru, notifikasi grup mengingatkan bahwa pembagian revisi tugasmu ditunggu oleh teman kelompok.`;
+                    } else {
+                        text += `Setelah beristirahat sejenak di rumah, kamu menyadari pesan pengingat tenggat waktu tugas kelompok sudah menunggu responmu.`;
+                    }
+                    text += `<br><br>Bagaimana kamu menyikapi pengerjaan tugas kelompok saat ini?`;
+                    return text;
+                },
+                options: [
+                    {
+                        text: 'Membantu Menyelesaikan Tugas',
+                        exp: { academic: 4, popularity: 1, trust: 4 },
+                        flag: 'helped_finish_project_day6',
+                        feedback: 'Kamu meluangkan waktu tambahan untuk memeriksa draf, merapikan format, dan memastikan bagian kelompokmu terselesaikan dengan baik.'
+                    },
+                    {
+                        text: 'Menetapkan Batasan dan Berkomunikasi',
+                        exp: { academic: 2, popularity: 0, trust: 4 },
+                        flag: 'set_project_boundaries_day6',
+                        feedback: 'Kamu mengomunikasikan ketersediaan waktumu dengan jujur dan jelas, menyerahkan bagian yang menjadi kewajibanmu secara terukur.'
+                    },
+                    {
+                        text: 'Tetap Memprioritaskan Rencana Pribadi',
+                        exp: { academic: -2, popularity: 1, trust: -2 },
+                        flag: 'prioritized_own_plans_over_project_day6',
+                        feedback: 'Kamu memilih tidak mengambil tugas tambahan hari ini dan memberitahukan kelompok agar melanjutkan pengerjaan tanpa menunggumu.'
+                    }
+                ]
+            },
+            {
+                id: 'd6_scene3',
+                location: 'Lokasi Aktivitas Sabtu',
+                title: 'Day 6: Momen Bersama',
+                image: IMAGE_ASSETS.cafe_hangout,
+                narrative: `Sore hari menjelang. Sebuah kejadian kecil terjadi di sekitarmu, menghadirkan situasi sosial yang tidak terduga dalam harimu.`,
+                getDynamicNarrative: (flags) => {
+                    let text = `Sore hari. `;
+                    if (flags.chose_hangout_over_project) {
+                        text += `Saat berkumpul di kafe, kamu menyadari salah satu teman sekelas tampak cenderung diam dan kurang dilibatkan dalam candaan kelompok.`;
+                    } else if (flags.prioritized_group_assignment) {
+                        text += `Saat sesi diskusi kelompok daring, seorang anggota mengaku melalui obrolan privat bahwa ia sedang merasa sangat tertekan dengan beban belajar minggu ini.`;
+                    } else {
+                        text += `Saat menikmati waktu santai di rumah, kamu menerima pesan dari teman sekelas yang sekadar ingin bercerita tentang kebingungannya menghadapi minggu depan.`;
+                    }
+                    text += `<br><br>Bagaimana kamu merespons situasi ini?`;
+                    return text;
+                },
+                options: [
+                    {
+                        text: 'Berusaha melibatkan atau memberikan bantuan penuh',
+                        exp: { academic: 0, popularity: 2, trust: 4 },
+                        flag: 'included_someone_day6',
+                        feedback: 'Tindakan hangatmu membuat orang tersebut merasa dihargai dan diperhatikan.'
+                    },
+                    {
+                        text: 'Bertanya secara peka dan mencoba memahami situasinya',
+                        exp: { academic: 2, popularity: 0, trust: 4 },
+                        flag: 'listened_to_someone_day6',
+                        feedback: 'Pendekatan empati dan perhatian yang kamu berikan membangun koneksi interpersonal yang lebih dalam.'
+                    },
+                    {
+                        text: 'Menghormati batasan pribadi dan bersikap netral',
+                        exp: { academic: 0, popularity: 0, trust: 1 },
+                        flag: 'maintained_boundaries_day6',
+                        feedback: 'Kamu memberi ruang pribadi yang cukup tanpa bersikap menghakimi atau mencampuri urusannya.'
+                    }
+                ]
+            },
+            {
+                id: 'd6_scene4',
+                location: 'SMA Garuda Online Portal — Sabtu Sore (16.30 WIB)',
+                title: 'Day 6: Hasil Ujian',
+                image: IMAGE_ASSETS.exam_results,
+                narrative: `Pukul 16.30 WIB. Notifikasi pengumuman resmi dari wali kelas masuk ke ponselmu. Hasil Ujian Jumat (Day 5) telah dipublikasikan secara pribadi di portal nilai siswa!`,
+                getDynamicNarrative: (flags, engine) => {
+                    const examRes = engine.getOrCalculateExamResult();
+                    let scoreText = "";
+                    let evalNarrative = "";
+
+                    if (examRes.category === 'HIGH') {
+                        scoreText = "<span class='text-emerald-500 font-bold'>TINGGI (Sangat Memuaskan)</span>";
+                        evalNarrative = "Kerja keras dan fokus strategi belajarmu membuahkan hasil luar biasa. Pemahaman materimu sangat solid!";
+                    } else if (examRes.category === 'MODERATE') {
+                        scoreText = "<span class='text-sky-500 font-bold'>CUKUP (Memenuhi Standar)</span>";
+                        evalNarrative = "Hasil ujianmu berada pada tingkat yang stabil. Ada beberapa poin evaluasi, tetapi kamu berhasil melewatinya dengan baik.";
+                    } else {
+                        scoreText = "<span class='text-rose-500 font-bold'>RENDAH (Memerlukan Evaluasi)</span>";
+                        evalNarrative = "Hasil ujian menunjukkan ada materi yang perlu kamu ulas kembali. Ini menjadi pelajaran berharga untuk melangkah maju.";
+                    }
+
+                    let text = `Pukul 16.30 WIB. Portal akademik sekolah memperbarui status evaluasi ujian Jumatmu.<br><br>`;
+                    text += `📊 <b>Kategori Hasil Ujian:</b> ${scoreText}<br>`;
+                    text += `<p class='mt-2 text-xs sm:text-sm italic opacity-90'>${evalNarrative}</p><br>`;
+                    
+                    if (examRes.integrityRisk) {
+                        text += `<div class='p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs mb-2'>⚠️ Catatan Kejujuran: Pertimbangan mengambil jalan pintas menyisakan rasa ganjal di dalam diri, mendorongmu untuk lebih percaya pada kemampuan sendiri di masa depan.</div>`;
+                    } else {
+                        text += `Kamu merasa tenang karena semua jawaban murni merupakan refleksi integritas dan usahamu sendiri.<br>`;
+                    }
+
+                    text += `<br>Bagaimana kamu menyikapi pengumuman hasil ujian ini?`;
+                    return text;
+                },
+                options: [
+                    {
+                        text: 'Menerima hasil dengan bersyukur dan menjadikannya bahan evaluasi',
+                        exp: { academic: 3, popularity: 0, trust: 2 },
+                        flag: 'accepted_exam_reflection',
+                        feedback: 'Sikap kedewasaanmu membantu menjaga fokus mental untuk menghadapi minggu-minggu berikutnya di sekolah.'
+                    },
+                    {
+                        text: 'Membagikan atau mendiskusikan hasil dengan teman dekat',
+                        exp: { academic: 1, popularity: 3, trust: 2 },
+                        flag: 'shared_exam_feeling',
+                        feedback: 'Kalian saling memberikan semangat dan menyadari bahwa setiap orang memiliki proses belajarnya masing-masing.'
+                    },
+                    {
+                        text: 'Tutup portal nilai dan kembali menikmati sisa akhir pekan',
+                        exp: { academic: 1, popularity: 0, trust: 0 },
+                        flag: 'closed_exam_portal_calmly',
+                        feedback: 'Kamu tidak membiarkan nilai mengontrol suasana hatimu di akhir pekan.'
+                    }
+                ]
+            }
+        ],
+        7: [
+            {
+                id: 'd7_scene1',
+                location: 'Kamar Tidur Alex — Minggu Pagi (08.30 WIB)',
+                title: 'Day 7: Where Do You Belong?',
+                image: IMAGE_ASSETS.sunday_window,
+                narrative: `Minggu pagi, 08.30 WIB. Sinar matahari pagi menembus celah gorden kamarmu. Tidak ada bunyi alarm berisik, tidak ada desakan untuk bergegas memakai seragam, dan tidak ada ujian yang menunggumu hari ini.<br><br>Kamu duduk di tepi tempat tidur, memegang cangkir hangat sembari memandang ponselmu. Tepat satu minggu yang lalu, kamu memasuki SMA Garuda sebagai siswa pindahan yang belum mengenal siapa pun. Kini, setelah enam hari yang sarat akan keputusan, percakapan, dan kejutan, kamu merenungkan kembali perjalanan tersebut.`,
+                getDynamicNarrative: (flags, engine) => {
+                    let text = `Minggu pagi, 08.30 WIB. Tidak ada bunyi alarm berisik, tidak ada desakan untuk bergegas memakai seragam sekolah.<br><br>`;
+                    text += `Kamu duduk di kamar sembari memandangi seragam SMA Garuda yang tergantung rapi. Tepat tujuh hari lalu, kamu datang sebagai murid baru yang tidak mengenal siapa pun di kelas XI-2.<br><br>`;
+
+                    if (flags.studied_during_break || flags.focused_on_own_work || flags.studied_intensively_before_test) {
+                        text += `Kamu teringat pada lembar-lembar catatan pelajaran dan usaha kerasmu dalam hal akademik. `;
+                    }
+                    if (flags.joined_popular_group || flags.lunch_popular || flags.active_in_group_chat || flags.chose_hangout_over_project) {
+                        text += `Momen-momen tawa bersama kawan-kawan di kantin dan linimasa grup percakapan melintas di ingatanmu. `;
+                    }
+                    if (flags.befriended_quiet_student || flags.initiated_personal_conversation || flags.offered_support_to_teammate || flags.sought_trusted_perspective) {
+                        text += `Obrolan mendalam yang kamu bangun secara personal memberi kehangatan tersendiri. `;
+                    }
+
+                    text += `<br><br>Saat melihat kembali minggu pertamamu, pemikiran apa yang paling utama terlintas di benakmu?`;
+                    return text;
+                },
+                options: [
+                    {
+                        text: '"Aku Sudah Membuktikan Kemampuanku."',
+                        exp: { academic: 3, popularity: 0, trust: 0 },
+                        flag: 'reflected_on_achievements_day7',
+                        feedback: 'Kamu menyadari bahwa dedikasi belajar, keseriusan menghadapi ujian, dan usahamu menyelesaikan tanggung jawab akademik memberi fondasi yang kokoh bagi masa depanmu.'
+                    },
+                    {
+                        text: '"Aku Mulai Mengenal Orang-Orang di Sini."',
+                        exp: { academic: 0, popularity: 2, trust: 3 },
+                        flag: 'reflected_on_relationships_day7',
+                        feedback: 'Ingatanmu tertuju pada wajah-wajah teman sekelas yang kini bukan lagi orang asing. Hubungan yang tumbuh menjadi bagian paling berharga minggu ini.'
+                    },
+                    {
+                        text: '"Aku Masih Mencari Tahu Apa yang Sebenarnya Kuinginkan."',
+                        exp: { academic: 1, popularity: 0, trust: 1 },
+                        flag: 'reflected_on_personal_growth_day7',
+                        feedback: 'Kamu menghargai proses yang sedang berlangsung. Kamu sadar bahwa beradaptasi di sekolah baru butuh waktu dan kamu melangkah sesuai ritmemu.'
+                    }
+                ]
+            },
+            {
+                id: 'd7_scene2',
+                location: 'Kamar / Ruang Santai — Minggu Siang',
+                title: 'Day 7: Refleksi Hari Minggu',
+                image: IMAGE_ASSETS.online_chat,
+                narrative: `Minggu siang. Suasana hari libur berlangsung tenang. Notifikasi di ponselmu berkedip, memberi ruang untuk sebuah interaksi penutup sebelum minggu sekolah kedua dimulai besok.`,
+                getDynamicNarrative: (flags) => {
+                    let text = `Minggu siang. Ponselmu yang tergeletak di meja menyala pelan.<br><br>`;
+                    if (flags.befriended_quiet_student || flags.initiated_personal_conversation || flags.built_personal_connection_day2 || flags.listened_to_someone_day6) {
+                        text += `📱 <b>Pesan Masuk:</b> Seseorang yang cukup dekat denganmu mengirimkan pesan menanyakan kabarmu dan membahas persiapan besok.<br>`;
+                    } else if (flags.joined_popular_group || flags.lunch_popular || flags.active_in_group_chat) {
+                        text += `📱 <b>Pesan Grup:</b> Teman-teman sekelas ramai mendiskusikan jadwal pelajaran untuk hari Senin.<br>`;
+                    } else {
+                        text += `📱 <b>Notifikasi Umum:</b> Pengingat pengumuman mingguan sekolah menghiasi layar utama ponselmu.<br>`;
+                    }
+                    text += `<br>Bagaimana kamu memanfaatkan kesempatan berinteraksi di sisa hari libur ini?`;
+                    return text;
+                },
+                options: [
+                    {
+                        text: 'Menghubungi Seseorang Lebih Dulu',
+                        exp: { academic: 0, popularity: 2, trust: 4 },
+                        flag: 'initiated_final_conversation_day7',
+                        feedback: 'Kamu mengirimkan pesan hangat lebih dulu, mempererat komunikasi dan memastikan koneksi sosial tetap terjalin baik.'
+                    },
+                    {
+                        text: 'Membalas Pesan yang Masuk',
+                        exp: { academic: 0, popularity: 1, trust: 3 },
+                        flag: 'responded_to_final_message_day7',
+                        feedback: 'Kamu merespons obrolan yang datang dengan terbuka, menunjukkan bahwa dirimu adalah teman yang responsif dan dapat diandalkan.'
+                    },
+                    {
+                        text: 'Menikmati Hari Tanpa Memulai Percakapan',
+                        exp: { academic: 1, popularity: 0, trust: 0 },
+                        flag: 'spent_final_day_alone',
+                        feedback: 'Kamu memilih menyendiri sejenak untuk menenangkan pikiran, membaca buku, dan menyegarkan kondisi fisik sebelum menyambut hari Senin.'
+                    }
+                ]
+            },
+            {
+                id: 'd7_scene3',
+                location: 'Balkon / Jendela Kamar — Minggu Sore (17.30 WIB)',
+                title: 'Day 7: Menyongsong Esok Hari',
+                image: IMAGE_ASSETS.evening_sunset,
+                narrative: `Matahari sore perlahan menyusut di ufuk barat, memancarkan warna jingga keemasan di balik jajaran bangunan kota.<br><br>Besok pagi, bel SMA Garuda akan kembali berbunyi. Kamu akan melangkah melewati gerbang yang sama, menuju kelas XI-2 yang sama, namun tidak lagi sebagai murid asing di hari pertama.<br><br>Di mana sebenarnya tempatmu berada?`,
+                options: [
+                    {
+                        text: '"Aku Ingin Terus Berkembang dan Membuktikan Kemampuanku."',
+                        exp: { academic: 3, popularity: 0, trust: 0 },
+                        flag: 'chose_personal_improvement_day7',
+                        feedback: 'Fokus utamamu adalah melampaui batasan diri, terus belajar, dan membuktikan kualitas dirimu di SMA Garuda.'
+                    },
+                    {
+                        text: '"Aku Ingin Membangun Hubungan yang Benar-Benar Berarti."',
+                        exp: { academic: 0, popularity: 1, trust: 3 },
+                        flag: 'chose_meaningful_connections_day7',
+                        feedback: 'Tujuan utamamu adalah memelihara kehangatan persahabatan, kejujuran, dan rasa saling percaya dengan orang-orang di sekitarmu.'
+                    },
+                    {
+                        text: '"Aku Ingin Menemukan Ritmeku Sendiri."',
+                        exp: { academic: 1, popularity: 0, trust: 1 },
+                        flag: 'chose_own_pace_day7',
+                        feedback: 'Kamu memilih untuk menjalani kehidupan sekolah secara seimbang, tanpa tekanan ekspektasi berlebih dari pihak lain.'
+                    }
+                ]
+            },
+            {
+                id: 'd7_scene4',
+                location: 'Meja Belajar Alex — Minggu Malam (21.00 WIB)',
+                title: 'Day 7: Refleksi Akhir',
+                image: IMAGE_ASSETS.study_night,
+                narrative: `Malam hari tiba. Kamu merapikan tas sekolahmu, memasukkan buku-buku pelajaran untuk esok hari, dan mematikan lampu meja belajar.<br><br>Tujuh hari pertama di SMA Garuda telah resmi usai. Semua keputusan yang kamu ambil — kecil maupun besar — telah merajut alur ceritamu tersendiri.`,
+                getDynamicNarrative: (flags, engine) => {
+                    let text = `Malam hari tiba. Kamu menyusun buku pelajaran esok hari ke dalam tas.<br><br>`;
+                    text += `Tujuh hari telah berlalu sejak kamu melangkah pertama kali ke ruang XI-2. Keputusan dalam menyapa teman, menyelesaikan masalah kelompok, merespons rumor, menghadapi ujian, hingga menggunakan waktu luang kini telah membentuk reputasi dan jati dirimu.<br><br>`;
+                    text += `Kamu meletakkan kepala di atas bantal, siap menyambut lembaran baru di SMA Garuda...`;
+                    return text;
+                },
+                options: [
+                    {
+                        text: 'Lihat Evaluasi dan Akhir Perjalanan 7 Hari',
+                        exp: { academic: 0, popularity: 0, trust: 0 },
+                        flag: 'completed_day7_story',
+                        feedback: 'Perjalanan 7 harimu telah selesai dihitung!'
+                    }
+                ]
+            }
+        ]
+    };
+
+    class SchoolSimulatorEngine {
+        constructor() {
+            this.state = {
+                currentDay: 1,
+                currentSceneIndex: 0,
+                completedDay: 0,
+                stats: { academic: 0, popularity: 0, trust: 0 },
+                flags: {},
+                completedChoices: [],
+                examResultDay5: null,
+                finalEndingSaved: null,
+                theme: 'dark'
+            };
+
+            this.init();
+        }
+
+        init() {
+            this.loadState();
+            this.applyTheme();
+            this.updateHUD();
+            this.renderTimelineUI();
+        }
+
+        toggleTheme() {
+            this.state.theme = this.state.theme === 'dark' ? 'light' : 'dark';
+            this.applyTheme();
+            this.saveState();
+        }
+
+        applyTheme() {
+            const isDark = this.state.theme === 'dark';
+            if (isDark) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+
+            const hudIcon = document.getElementById('theme-toggle-icon');
+            const titleIcon = document.getElementById('title-theme-toggle-icon');
+            if (hudIcon) hudIcon.className = isDark ? 'fa-solid fa-sun text-amber-400' : 'fa-solid fa-moon text-indigo-600';
+            if (titleIcon) titleIcon.className = isDark ? 'fa-solid fa-sun text-amber-400' : 'fa-solid fa-moon text-indigo-600';
+
+            this.renderTimelineUI();
+        }
+
+        saveState() {
+            try {
+                localStorage.setItem(GAME_CONFIG.STORAGE_KEY, JSON.stringify(this.state));
+            } catch (e) {
+                console.error("Gagal menyimpan progres", e);
+            }
+        }
+
+        loadState() {
+            try {
+                const saved = localStorage.getItem(GAME_CONFIG.STORAGE_KEY);
+                if (saved) {
+                    this.state = { ...this.state, ...JSON.parse(saved) };
+                }
+            } catch (e) {
+                console.error("Gagal memuat progres", e);
+            }
+        }
+
+        resetGame() {
+            if (confirm("Apakah kamu yakin ingin memulai ulang seluruh progres game?")) {
+                const currentTheme = this.state.theme;
+                localStorage.removeItem(GAME_CONFIG.STORAGE_KEY);
+                this.state = {
+                    currentDay: 1,
+                    currentSceneIndex: 0,
+                    completedDay: 0,
+                    stats: { academic: 0, popularity: 0, trust: 0 },
+                    flags: {},
+                    completedChoices: [],
+                    examResultDay5: null,
+                    finalEndingSaved: null,
+                    theme: currentTheme
+                };
+                this.saveState();
+                this.updateHUD();
+                this.renderTimelineUI();
+                this.showScreen('screen-title');
+            }
+        }
+
+        updateHUD() {
+            document.getElementById('stat-academic').innerText = this.state.stats.academic;
+            document.getElementById('stat-popularity').innerText = this.state.stats.popularity;
+            document.getElementById('stat-trust').innerText = this.state.stats.trust;
+            
+            document.getElementById('hud-day-text').innerText = `Day ${this.state.currentDay}`;
+            const dayMeta = GAME_CONFIG.DAYS_DATA.find(d => d.day === this.state.currentDay);
+            document.getElementById('hud-scene-title').innerText = dayMeta ? dayMeta.title : '';
+
+            const startBtnText = document.getElementById('title-start-btn-text');
+            if (startBtnText) {
+                startBtnText.innerText = this.state.completedDay > 0 ? 'Lanjutkan Cerita' : 'Mulai Cerita';
+            }
+        }
+
+        showScreen(screenId) {
+            ['screen-title', 'screen-timeline', 'screen-gameplay', 'screen-ending'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            document.getElementById(screenId).classList.remove('hidden');
+
+            const hud = document.getElementById('hud-header');
+            if (screenId === 'screen-gameplay' || screenId === 'screen-ending') {
+                hud.classList.remove('hidden');
+            } else {
+                hud.classList.add('hidden');
+            }
+        }
+
+        renderTimelineUI() {
+            const container = document.getElementById('timeline-cards-container');
+            if (!container) return;
+            container.innerHTML = '';
+
+            GAME_CONFIG.DAYS_DATA.forEach(item => {
+                const isCompleted = item.day <= this.state.completedDay;
+                const isCurrent = item.day === (this.state.completedDay + 1);
+                const isLocked = !item.unlocked || item.day > (this.state.completedDay + 1);
+
+                const card = document.createElement('div');
+                card.className = `p-5 rounded-2xl border transition-all flex flex-col justify-between gap-4 ${
+                    isCompleted 
+                        ? 'bg-white/90 dark:bg-slate-900/90 border-emerald-500/40 shadow-sm' 
+                        : isCurrent 
+                        ? 'bg-white dark:bg-slate-900 border-indigo-500 shadow-lg shadow-indigo-500/10 ring-2 ring-indigo-500/20' 
+                        : 'bg-slate-100/60 dark:bg-slate-950/50 border-slate-300 dark:border-slate-800 opacity-60'
+                }`;
+
+                card.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <span class="p-2.5 rounded-xl ${isCompleted ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' : isCurrent ? 'bg-indigo-500/20 text-indigo-600 dark:text-indigo-400' : 'bg-slate-200 dark:bg-slate-800 text-slate-500'}">
+                            <i class="fa-solid ${item.icon}"></i>
+                        </span>
+                        <span class="text-xs font-semibold px-2.5 py-1 rounded-full ${
+                            isCompleted 
+                                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30' 
+                                : isCurrent 
+                                ? 'bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-500/40' 
+                                : 'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
+                        }">
+                            ${isCompleted ? 'Selesai' : isCurrent ? 'Hari Aktif' : 'Terkunci'}
+                        </span>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-900 dark:text-white text-base">${item.title}</h3>
+                        <p class="text-xs text-slate-600 dark:text-slate-400 mt-1">
+                            ${isCompleted ? 'Kamu telah menyelesaikan hari ini.' : isCurrent ? 'Hari ini siap untuk dimainkan.' : 'Konten hari ini belum dapat diakses.'}
+                        </p>
+                    </div>
+                    <button onclick="window.gameEngine.startDay(${item.day})" ${isLocked ? 'disabled' : ''} class="w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all ${
+                        isCurrent 
+                            ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-md' 
+                            : isCompleted 
+                            ? 'bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200' 
+                            : 'bg-slate-200 dark:bg-slate-900 text-slate-400 dark:text-slate-600 cursor-not-allowed'
+                    }">
+                        ${isCurrent ? 'Mulai Hari Ini' : isCompleted ? 'Mainkan Ulang' : 'Terkunci'}
+                    </button>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        startCurrentDay() {
+            const targetDay = Math.min(Math.max(1, this.state.completedDay + 1), 7);
+            this.startDay(targetDay);
+        }
+
+        backToTimeline() {
+            this.showScreen('screen-timeline');
+        }
+
+        proceedToNextDay() {
+            const nextDay = this.state.currentDay + 1;
+            if (nextDay <= 7) {
+                this.startDay(nextDay);
+            } else {
+                this.showDaySummaryScreen();
+            }
+        }
+
+        startDay(dayNum) {
+            // Revision 1: Enforce day progression validation & unlock lock check
+            if (dayNum < 1 || dayNum > 7 || dayNum > this.state.completedDay + 1) {
+                alert(`Day ${dayNum} belum terbuka.`);
+                return;
+            }
+
+            this.state.currentDay = dayNum;
+            this.state.currentSceneIndex = 0;
+            this.saveState();
+
+            this.updateHUD();
+            this.showScreen('screen-gameplay');
+            this.renderScene();
+        }
+
+        renderScene() {
+            const dayScenes = DAY_SCENES[this.state.currentDay];
+            if (!dayScenes || !dayScenes[this.state.currentSceneIndex]) {
+                this.showDaySummaryScreen();
+                return;
+            }
+
+            const scene = dayScenes[this.state.currentSceneIndex];
+
+            document.getElementById('scene-location-text').innerText = scene.location;
+            document.getElementById('scene-title-text').innerText = scene.title;
+            
+            let narrativeContent = scene.narrative;
+            if (scene.getDynamicNarrative) {
+                narrativeContent = scene.getDynamicNarrative(this.state.flags, this);
+            }
+            document.getElementById('scene-narrative-text').innerHTML = narrativeContent;
+
+            const imgElem = document.getElementById('scene-image');
+            imgElem.style.backgroundImage = `url('${scene.image}')`;
+
+            const optionsContainer = document.getElementById('scene-options-container');
+            optionsContainer.innerHTML = '';
+
+            scene.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full p-4 rounded-xl bg-white/90 dark:bg-slate-900/90 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 border border-slate-200 dark:border-slate-800 hover:border-indigo-500/60 text-left transition-all flex items-start gap-3 group shadow-sm";
+                btn.onclick = () => this.handleOptionSelect(scene.id, opt);
+
+                btn.innerHTML = `
+                    <span class="w-6 h-6 rounded-lg bg-slate-200 dark:bg-slate-800 group-hover:bg-indigo-600 text-slate-700 dark:text-slate-300 group-hover:text-white flex items-center justify-center text-xs font-bold shrink-0 transition-colors">
+                        ${String.fromCharCode(65 + idx)}
+                    </span>
+                    <span class="text-xs sm:text-sm text-slate-800 dark:text-slate-200 group-hover:text-indigo-900 dark:group-hover:text-white leading-snug font-medium">
+                        ${opt.text}
+                    </span>
+                `;
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        handleOptionSelect(sceneId, option) {
+            const choiceKey = `${this.state.currentDay}_${sceneId}`;
+
+            if (!this.state.completedChoices.includes(choiceKey)) {
+                this.state.stats.academic += (option.exp.academic || 0);
+                this.state.stats.popularity += (option.exp.popularity || 0);
+                this.state.stats.trust += (option.exp.trust || 0);
+
+                if (option.flag) {
+                    this.state.flags[option.flag] = true;
+                }
+
+                this.state.completedChoices.push(choiceKey);
+                this.saveState();
+                this.updateHUD();
+            }
+
+            this.showFeedbackModal(option);
+        }
+
+        getOrCalculateExamResult() {
+            if (this.state.examResultDay5) {
+                return this.state.examResultDay5;
+            }
+
+            let score = 0;
+            const flags = this.state.flags || {};
+            
+            if (flags.studied_intensively_before_test) score += 3;
+            else if (flags.studied_with_classmates) score += 2;
+            else if (flags.rested_before_test) score += 1;
+
+            if (flags.persisted_on_difficult_question) score += 2;
+            else if (flags.skipped_question_temporarily) score += 2;
+            else if (flags.trusted_exam_instinct) score += 1;
+
+            if (flags.relied_on_own_answers) score += 2;
+            else if (flags.paused_and_refocused) score += 2;
+            else if (flags.considered_cheating) score += 0;
+
+            if (this.state.stats.academic >= 25) score += 3;
+            else if (this.state.stats.academic >= 15) score += 2;
+
+            let category = 'MODERATE';
+            if (score >= 8) category = 'HIGH';
+            else if (score <= 4) category = 'LOW';
+
+            const result = {
+                score: score,
+                category: category,
+                integrityRisk: !!flags.considered_cheating
+            };
+
+            this.state.examResultDay5 = result;
+            this.saveState();
+            return result;
+        }
+
+        calculateFinalEnding() {
+            if (this.state.finalEndingSaved) {
+                return this.state.finalEndingSaved;
+            }
+
+            const stats = this.state.stats;
+            const flags = this.state.flags || {};
+
+            const relationshipFlagKeys = [
+                'befriended_quiet_student', 'initiated_personal_conversation',
+                'built_personal_connection_day2', 'offered_support_to_teammate',
+                'addressed_rumor_directly', 'sought_trusted_perspective',
+                'studied_with_classmates', 'helped_finish_project_day6',
+                'included_someone_day6', 'listened_to_someone_day6',
+                'initiated_final_conversation_day7', 'responded_to_final_message_day7',
+                'reflected_on_relationships_day7', 'chose_meaningful_connections_day7'
+            ];
+
+            let trustFlagCount = 0;
+            relationshipFlagKeys.forEach(flagKey => {
+                if (flags[flagKey]) trustFlagCount++;
+            });
+
+            const academic = stats.academic;
+            const popularity = stats.popularity;
+            const trust = stats.trust;
+
+            let finalEnding = null;
+
+            // Priority 1 — The Outcast
+            if (popularity < 15 && trust < 18 && trustFlagCount <= 2) {
+                finalEnding = {
+                    id: 'OUTCAST',
+                    title: 'ENDING 1 — THE OUTCAST',
+                    badge: 'ENDING AKHIR: SOCIAL DISTANCE',
+                    icon: 'fa-user-slash',
+                    colorTheme: 'rose',
+                    themeTitle: 'Kesulitan Membangun Hubungan Sosial yang Bermakna',
+                    narrative: `Selama satu minggu pertamamu di SMA Garuda, kamu cenderung menjaga jarak dan belum menemukan lingkaran sosial yang membuatmu nyaman. Meski tidak ada permusuhan terbuka, kamu masih merasa sebagai 'orang luar' di kelas XI-2.<br><br>Ini bukanlah akhir dari segalanya, melainkan sebuah cermin bahwa membuka diri dan menaruh kepercayaan pada orang lain membutuhkan keberanian yang bertahap.`
+                };
+            }
+            // Priority 2 — The Academic Ace
+            else if (academic >= 25 && academic > popularity && academic > trust) {
+                finalEnding = {
+                    id: 'ACADEMIC_ACE',
+                    title: 'ENDING 3 — THE ACADEMIC ACE',
+                    badge: 'ENDING AKHIR: INTELLECTUAL DISTINCTION',
+                    icon: 'fa-user-graduate',
+                    colorTheme: 'sky',
+                    themeTitle: 'Prestasi Akademik Menjadi Kekuatan Utama',
+                    narrative: `Fokus dan ketekunan belajarmu membuahkan hasil luar biasa. Di mata guru dan teman sekelas, Alex dikenal sebagai pribadi yang cerdas, memiliki dedikasi tinggi pada tugas, serta diandalkan dalam hal akademik.<br><br>Kamu telah membuktikan kapasitas dirimu dengan sangat baik di SMA Garuda. Tantangan berikutnya adalah menyeimbangkan keunggulan ini dengan hubungan interpersonal yang lebih hangat.`
+                };
+            }
+            // Priority 3 — The People's Person
+            else if ((trust >= 25 || trust >= popularity) && trustFlagCount >= 3) {
+                finalEnding = {
+                    id: 'PEOPLES_PERSON',
+                    title: 'ENDING 4 — THE PEOPLE\'S PERSON',
+                    badge: 'ENDING AKHIR: GENUINE BOND',
+                    icon: 'fa-handshake-angle',
+                    colorTheme: 'emerald',
+                    themeTitle: 'Kepercayaan dan Hubungan Sosial yang Bermakna',
+                    narrative: `Kamu telah berhasil membangun hubungan yang berlandaskan empati, kejujuran, dan kehangatan. Kamu mungkin bukan murid paling populer atau paling menonjol dalam nilai, tetapi teman-teman sekelas melihatmu sebagai sosok yang jujur, dapat dipercaya, dan nyaman diajak bicara.<br><br>Kamu telah menemukan tempat yang sejati di XI-2: di hati orang-orang yang menghargai kehadiranmu.`
+                };
+            }
+            // Priority 4 — The It Kid
+            else if (popularity >= 20 && popularity >= academic) {
+                finalEnding = {
+                    id: 'IT_KID',
+                    title: 'ENDING 2 — THE IT KID',
+                    badge: 'ENDING AKHIR: POPULAR PRESENCE',
+                    icon: 'fa-star',
+                    colorTheme: 'pink',
+                    themeTitle: 'Dikenal Luas dan Memiliki Kehadiran Sosial yang Kuat',
+                    narrative: `Kehadiranmu di XI-2 memberikan warna ceria dan energi sosial yang dominan. Namamu dengan cepat dikenal di koridor sekolah, kamu mudah diajak berkumpul, dan energimu membuat kelas terasa lebih hidup.<br><br>Kamu telah menjadi salah satu magnet sosial di SMA Garuda. Langkah selanjutnya adalah memastikan popularitas tersebut berakar pada persahabatan yang tulus.`
+                };
+            }
+            // Deterministic Fallback Rule
+            else {
+                if (academic >= popularity && academic >= trust) {
+                    finalEnding = {
+                        id: 'ACADEMIC_ACE',
+                        title: 'ENDING 3 — THE ACADEMIC ACE',
+                        badge: 'ENDING AKHIR: INTELLECTUAL DISTINCTION',
+                        icon: 'fa-user-graduate',
+                        colorTheme: 'sky',
+                        themeTitle: 'Prestasi Akademik Menjadi Kekuatan Utama',
+                        narrative: `Fokus dan ketekunan belajarmu membuahkan hasil luar biasa. Di mata guru dan teman sekelas, Alex dikenal sebagai pribadi yang cerdas, memiliki dedikasi tinggi pada tugas, serta diandalkan dalam hal akademik.<br><br>Kamu telah membuktikan kapasitas dirimu dengan sangat baik di SMA Garuda. Tantangan berikutnya adalah menyeimbangkan keunggulan ini dengan hubungan interpersonal yang lebih hangat.`
+                    };
+                } else if (trust >= popularity) {
+                    finalEnding = {
+                        id: 'PEOPLES_PERSON',
+                        title: 'ENDING 4 — THE PEOPLE\'S PERSON',
+                        badge: 'ENDING AKHIR: GENUINE BOND',
+                        icon: 'fa-handshake-angle',
+                        colorTheme: 'emerald',
+                        themeTitle: 'Kepercayaan dan Hubungan Sosial yang Bermakna',
+                        narrative: `Kamu telah berhasil membangun hubungan yang berlandaskan empati, kejujuran, dan kehangatan. Kamu mungkin bukan murid paling populer atau paling menonjol dalam nilai, tetapi teman-teman sekelas melihatmu sebagai sosok yang jujur, dapat dipercaya, dan nyaman diajak bicara.<br><br>Kamu telah menemukan tempat yang sejati di XI-2: di hati orang-orang yang menghargai kehadiranmu.`
+                    };
+                } else {
+                    finalEnding = {
+                        id: 'IT_KID',
+                        title: 'ENDING 2 — THE IT KID',
+                        badge: 'ENDING AKHIR: POPULAR PRESENCE',
+                        icon: 'fa-star',
+                        colorTheme: 'pink',
+                        themeTitle: 'Dikenal Luas dan Memiliki Kehadiran Sosial yang Kuat',
+                        narrative: `Kehadiranmu di XI-2 memberikan warna ceria dan energi sosial yang dominan. Namamu dengan cepat dikenal di koridor sekolah, kamu mudah diajak berkumpul, dan energimu membuat kelas terasa lebih hidup.<br><br>Kamu telah menjadi salah satu magnet sosial di SMA Garuda. Langkah selanjutnya adalah memastikan popularitas tersebut berakar pada persahabatan yang tulus.`
+                    };
+                }
+            }
+
+            this.state.finalEndingSaved = finalEnding;
+            this.saveState();
+            return finalEnding;
+        }
+
+        showFeedbackModal(option) {
+            const modal = document.getElementById('feedback-modal');
+            const expList = document.getElementById('feedback-exp-list');
+            const narrative = document.getElementById('feedback-narrative');
+
+            expList.innerHTML = '';
+            
+            const expTypes = [
+                { key: 'academic', label: 'Akademik', color: 'sky' },
+                { key: 'popularity', label: 'Popularitas', color: 'pink' },
+                { key: 'trust', label: 'Kepercayaan', color: 'emerald' }
+            ];
+
+            expTypes.forEach(t => {
+                const val = option.exp[t.key] || 0;
+                const sign = val > 0 ? '+' : '';
+                const badge = document.createElement('span');
+                badge.className = `px-2.5 py-1 rounded-lg text-xs font-bold bg-${t.color}-500/10 border border-${t.color}-500/30 text-${t.color}-600 dark:text-${t.color}-400`;
+                badge.innerText = `${t.label}: ${sign}${val}`;
+                expList.appendChild(badge);
+            });
+
+            narrative.innerText = option.feedback;
+            modal.classList.remove('hidden');
+        }
+
+        closeFeedbackModal() {
+            document.getElementById('feedback-modal').classList.add('hidden');
+            this.state.currentSceneIndex++;
+            this.saveState();
+            this.renderScene();
+        }
+
+        openFullStatsModal() {
+            const modal = document.getElementById('full-stats-modal');
+            const container = document.getElementById('full-stats-content');
+            if (!modal || !container) return;
+
+            const stats = this.state.stats;
+            const flags = this.state.flags || {};
+            const examRes = this.getOrCalculateExamResult();
+            const ending = this.calculateFinalEnding();
+
+            let html = `
+                <div class="p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-between">
+                    <div>
+                        <span class="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">Hasil Ending Akhir</span>
+                        <h4 class="text-base font-extrabold text-slate-900 dark:text-white mt-0.5">${ending.title}</h4>
+                    </div>
+                    <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center text-lg">
+                        <i class="fa-solid ${ending.icon}"></i>
+                    </div>
+                </div>
+
+                <!-- Total Stats Matrix -->
+                <div class="grid grid-cols-3 gap-2">
+                    <div class="p-3 rounded-xl bg-white/70 dark:bg-slate-900/80 border border-sky-500/30 text-center shadow-sm">
+                        <span class="text-xs text-slate-500 dark:text-slate-400">Total Akademik</span>
+                        <div class="text-lg font-bold text-sky-600 dark:text-sky-400">${stats.academic} EXP</div>
+                    </div>
+                    <div class="p-3 rounded-xl bg-white/70 dark:bg-slate-900/80 border border-pink-500/30 text-center shadow-sm">
+                        <span class="text-xs text-slate-500 dark:text-slate-400">Total Popularitas</span>
+                        <div class="text-lg font-bold text-pink-600 dark:text-pink-400">${stats.popularity} EXP</div>
+                    </div>
+                    <div class="p-3 rounded-xl bg-white/70 dark:bg-slate-900/80 border border-emerald-500/30 text-center shadow-sm">
+                        <span class="text-xs text-slate-500 dark:text-slate-400">Total Kepercayaan</span>
+                        <div class="text-lg font-bold text-emerald-600 dark:text-emerald-400">${stats.trust} EXP</div>
+                    </div>
+                </div>
+
+                <!-- Exam Day 5 Status -->
+                <div class="p-3.5 rounded-xl bg-white/70 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <div class="font-bold text-slate-900 dark:text-white mb-1 flex items-center gap-1.5">
+                        <i class="fa-solid fa-file-signature text-indigo-500"></i> Evaluasi Ujian Day 5
+                    </div>
+                    <p class="text-xs text-slate-600 dark:text-slate-300">
+                        Kategori Performa: <b class="text-indigo-600 dark:text-indigo-400">${examRes.category} (Skor: ${examRes.score})</b><br>
+                        Status Kejujuran: ${examRes.integrityRisk ? '<span class="text-amber-500 font-semibold">Sempat Tergiur Jalan Pintas</span>' : '<span class="text-emerald-500 font-semibold">Murni Kejujuran Sendiri</span>'}
+                    </p>
+                </div>
+
+                <!-- Relationship Flags Summary -->
+                <div class="p-3.5 rounded-xl bg-white/70 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <div class="font-bold text-slate-900 dark:text-white mb-2 flex items-center gap-1.5">
+                        <i class="fa-solid fa-diagram-project text-pink-500"></i> Penanda Hubungan dan Momen Kunci
+                    </div>
+                    <ul class="list-disc list-inside text-xs text-slate-600 dark:text-slate-300 space-y-1">
+                        ${flags.joined_popular_group ? '<li>Mendekati kelompok populer pada hari pertama</li>' : ''}
+                        ${flags.befriended_quiet_student ? '<li>Menyapa siswa pendiam di meja dekat jendela</li>' : ''}
+                        ${flags.studied_during_break ? '<li>Memprioritaskan belajar mandiri saat istirahat</li>' : ''}
+                        ${flags.took_group_initiative ? '<li>Mengambil inisiatif kepemimpinan dalam tugas kelompok</li>' : ''}
+                        ${flags.offered_support_to_teammate ? '<li>Memberikan empati dan bantuan pada anggota kelompok yang kesulitan</li>' : ''}
+                        ${flags.addressed_rumor_directly ? '<li>Melakukan klarifikasi rumor secara langsung dan jujur</li>' : ''}
+                        ${flags.prioritized_group_assignment ? '<li>Memprioritaskan tenggat waktu proyek kelompok di akhir pekan</li>' : ''}
+                        ${flags.chose_hangout_over_project ? '<li>Memilih membangun keakraban sosial di luar sekolah</li>' : ''}
+                        ${flags.initiated_final_conversation_day7 ? '<li>Mengambil langkah pertama menghubungi teman di Hari ke-7</li>' : ''}
+                        ${flags.chose_meaningful_connections_day7 ? '<li>Memilih fokus pada hubungan yang bermakna sebagai arah hidup</li>' : ''}
+                    </ul>
+                </div>
+            `;
+
+            container.innerHTML = html;
+            modal.classList.remove('hidden');
+        }
+
+        closeFullStatsModal() {
+            document.getElementById('full-stats-modal').classList.add('hidden');
+        }
+
+        showDaySummaryScreen() {
+            this.saveState();
+            
+            if (this.state.completedDay < this.state.currentDay) {
+                this.state.completedDay = this.state.currentDay;
+            }
+            this.saveState();
+
+            document.getElementById('end-stat-acad').innerText = (this.state.stats.academic > 0 ? '+' : '') + this.state.stats.academic;
+            document.getElementById('end-stat-pop').innerText = (this.state.stats.popularity > 0 ? '+' : '') + this.state.stats.popularity;
+            document.getElementById('end-stat-trust').innerText = (this.state.stats.trust > 0 ? '+' : '') + this.state.stats.trust;
+
+            const titleElem = document.getElementById('ending-title-text');
+            const badgeElem = document.getElementById('ending-badge-text');
+            const descElem = document.getElementById('ending-desc-text');
+            const actionsElem = document.getElementById('summary-actions');
+            const extraDetailsElem = document.getElementById('ending-extra-details');
+            const iconContainer = document.getElementById('ending-icon-container');
+            const iconElem = document.getElementById('ending-icon');
+
+            let summaryDesc = "";
+            let nextDayNumber = this.state.currentDay + 1;
+
+            if (this.state.currentDay === 7) {
+                const finalEnding = this.calculateFinalEnding();
+
+                badgeElem.innerText = finalEnding.badge;
+                titleElem.innerText = finalEnding.title;
+                summaryDesc = finalEnding.themeTitle;
+
+                if (iconContainer && iconElem) {
+                    iconContainer.className = `w-16 h-16 rounded-2xl bg-${finalEnding.colorTheme}-500/20 border border-${finalEnding.colorTheme}-500/40 flex items-center justify-center text-${finalEnding.colorTheme}-600 dark:text-${finalEnding.colorTheme}-400 text-2xl`;
+                    iconElem.className = `fa-solid ${finalEnding.icon}`;
+                }
+
+                if (extraDetailsElem) {
+                    extraDetailsElem.classList.remove('hidden');
+                    extraDetailsElem.innerHTML = `
+                        <p class="mb-2 font-medium">${finalEnding.narrative}</p>
+                        <div class="mt-3 pt-3 border-t border-slate-200 dark:border-slate-800 flex justify-between items-center font-semibold text-xs text-indigo-600 dark:text-indigo-400">
+                            <span>Total Akumulasi 7 Hari Terhitung</span>
+                            <span>Akademik: ${this.state.stats.academic} | Pop: ${this.state.stats.popularity} | Percaya: ${this.state.stats.trust}</span>
+                        </div>
+                    `;
+                }
+
+                if (actionsElem) {
+                    actionsElem.innerHTML = `
+                        <button onclick="window.gameEngine.openFullStatsModal()" class="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-indigo-600 to-pink-600 hover:from-indigo-700 hover:to-pink-700 text-white font-bold shadow-lg shadow-indigo-500/25 transition-all flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-list-check"></i>
+                            <span>Lihat Statistik Lengkap</span>
+                        </button>
+                        <button onclick="window.gameEngine.resetGame()" class="w-full py-3 px-6 rounded-2xl bg-rose-100 dark:bg-rose-900/40 hover:bg-rose-200 dark:hover:bg-rose-800/60 text-rose-700 dark:text-rose-300 font-semibold border border-rose-300 dark:border-rose-700 transition-all flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-rotate-right"></i>
+                            <span>Mulai Permainan Baru</span>
+                        </button>
+                    `;
+                }
+            } else {
+                if (extraDetailsElem) extraDetailsElem.classList.add('hidden');
+                badgeElem.innerText = `RINGKASAN DAY ${this.state.currentDay}`;
+
+                if (this.state.currentDay === 1) {
+                    titleElem.innerText = "Kesan Pertama Telah Terbentuk";
+                    summaryDesc = "Hari pertamamu di SMA Garuda telah berakhir. Kamu telah menanamkan kesan awal di mata teman-teman sekelasmu melalui pilihan tempat duduk, perkenalan diri, dan teman makan siangmu.";
+                } else if (this.state.currentDay === 2) {
+                    titleElem.innerText = "Mencari Tempatmu";
+                    summaryDesc = "Hari kedua telah usai. Kamu mulai membangun hubungan yang lebih spesifik, baik melalui percakapan pagi, grup obrolan kelas, maupun kegiatan setelah sekolah.";
+                } else if (this.state.currentDay === 3) {
+                    titleElem.innerText = "Dinamika Kelompok";
+                    summaryDesc = "Tugas kelompok pertamamu memberikan tantangan nyata dalam berkolaborasi. Cara kamu menangani inisiatif, anggota yang bermasalah, dan pembagian peran membentuk sudut pandang teman-temanmu.";
+                } else if (this.state.currentDay === 4) {
+                    titleElem.innerText = "Menghadapi Rumor";
+                    summaryDesc = "Hari keempat penuh dengan desas-desus. Kamu belajar bagaimana cerita bisa beredar dan bagaimana reputasimu mulai terbentuk dari sudut pandang orang lain.";
+                } else if (this.state.currentDay === 5) {
+                    titleElem.innerText = "Ujian Jumat Selesai";
+                    summaryDesc = "Bel akhir berbunyi. Ujian telah selesai, dan kamu mengumpulkan lembar jawabanmu. Hasil ujian belum diumumkan hari ini — evaluasi dan hasilnya akan disampaikan pada Day 6!";
+                } else if (this.state.currentDay === 6) {
+                    titleElem.innerText = "Keseimbangan Akhir Pekan";
+                    summaryDesc = "Sabtu telah berlalu. Kamu telah belajar menyeimbangkan antara tanggung jawab kelompok, momen sosial bersama teman, waktu istirahat pribadi, serta menerima evaluasi hasil ujian dengan bijak.";
+                }
+
+                descElem.innerText = summaryDesc;
+
+                let buttonsHtml = `
+                    <button onclick="window.gameEngine.proceedToNextDay()" class="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-indigo-600 to-pink-600 hover:from-indigo-700 hover:to-pink-700 text-white font-bold shadow-lg shadow-indigo-500/25 transition-all flex items-center justify-center gap-2">
+                        <span>Lanjut ke Day ${nextDayNumber}</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                    <button onclick="window.gameEngine.showScreen('screen-timeline')" class="w-full py-3 px-6 rounded-2xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-semibold transition-all">
+                        Kembali ke Timeline Hub
+                    </button>
+                `;
+
+                if (actionsElem) {
+                    actionsElem.innerHTML = buttonsHtml;
+                }
+            }
+
+            this.renderTimelineUI();
+            this.showScreen('screen-ending');
+        }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        window.gameEngine = new SchoolSimulatorEngine();
+    });
+</script>
+</body>
+</html>
